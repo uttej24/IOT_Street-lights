@@ -1,0 +1,260 @@
+#include <WiFi.h> #include <HTTPClient.h> #include <String.h>
+
+// WiFi parameters to be configured
+const char* ssid = "project12"; // Hoofdlettergevoelig
+const char* password = "project123456"; // Hoofdlettergevoelig
+String r = "http://projectsiot.xyz/IoTProjects/trafic/uploadstatus.php?a="; String rs = "\0";
+int k;
+String J = "&b="; char m;
+char n;
+
+
+
+#define ir1 33
+#define ir2 32
+#define ir3 35
+#define ir4 34
+#define ir5 12//Vechicle detection #define ldr 36
+#define L1 16
+#define L2 17
+#define R1 15
+#define R2 2
+#define R3 4
+#define R4 5
+
+
+#define G1 18
+#define G2 19
+ 
+
+#define G3 21
+#define G4 22 char a, b, c;
+int IR1, IR2, IR3, IR4,IR5;
+int LDR; void setup()
+{
+Serial.begin(9600); Serial.println("power up");
+
+
+
+pinMode (L1, OUTPUT); pinMode (L2, OUTPUT); pinMode (ir5, INPUT); pinMode (ldr, INPUT); pinMode (ir1, INPUT); pinMode (ir2, INPUT); pinMode (ir3, INPUT); pinMode(R1, OUTPUT); pinMode(R2, OUTPUT); pinMode(R3, OUTPUT); pinMode(R4, OUTPUT);
+
+pinMode(G1, OUTPUT); pinMode(G2, OUTPUT); pinMode(G3, OUTPUT); pinMode(G4, OUTPUT);
+
+Serial.print("Bezig met verbinden"); WiFi.begin(ssid, password); // Connect to WiFi
+
+// while wifi not connected yet, print '.'
+ 
+
+// then after it connected, get out of the loop while (WiFi.status() != WL_CONNECTED) { delay(500);
+Serial.print(".");
+}
+// Verbonden.
+Serial.println("OK!");
+
+
+// Access Point (SSID). Serial.print("SSID: "); Serial.println(WiFi.SSID());
+
+// IP adres.
+Serial.print("IP: ");
+Serial.println(WiFi.localIP()); Serial.println("state	1");
+// Signaalsterkte.
+long rssi = WiFi.RSSI(); Serial.print("Signaal sterkte (RSSI): "); Serial.print(rssi);
+Serial.println(" dBm"); Serial.println("");
+
+Serial.print("A = "); Serial.println("http://projectsiot.xyz/IoTProjects/trafic/uploadstatus.php?a=U&b=U"); if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
+
+HTTPClient http; //Declare an object of class HTTPClient
+
+
+http.begin("http://projectsiot.xyz/IoTProjects/TrafficLight/upload.php?a=U");
+
+
+int httpCode = http.GET(); //Send the request
+ 
+
+if (httpCode > 0) { //Check the returning code
+String payload = http.getString(); //Get the request response payload Serial.println(payload); //Print the response payload
+}
+http.end(); //Close connection
+
+
+delay(500);
+}
+}
+void check()
+{
+LDR=analogRead(ldr); int IR5=digitalRead(ir5); int IR1 = digitalRead(ir1); int IR2 = digitalRead(ir2); int IR3 = digitalRead(ir3); int IR4 = digitalRead(ir4); Serial.print("LDR="); Serial.println(LDR);
+Serial.print("Vechicle Obstracle="); Serial.println(IR5);
+Serial.print("ir1="); Serial.println(IR1); Serial.print("ir2="); Serial.println(IR2); Serial.print("ir3="); Serial.println(IR3); Serial.print("ir4="); Serial.println(IR4); delay(1000);
+if (IR1 == 1)//ESAT
+{
+Serial.println("EAST SIDE"); m='A';
+digitalWrite(R1, LOW); digitalWrite(G1, HIGH);
+ 
+
+digitalWrite(R2, HIGH); digitalWrite(G2, LOW); digitalWrite(R3, HIGH); digitalWrite(G3, LOW); digitalWrite(R4, HIGH); digitalWrite(G4, LOW); delay(10000); //2 min delay
+}
+
+
+else if (IR2 == 1)//WEST
+{ m='B';
+digitalWrite(R1, HIGH); digitalWrite(G1, LOW); digitalWrite(R2, LOW); digitalWrite(G2, HIGH); digitalWrite(R3, HIGH); digitalWrite(G3, LOW); digitalWrite(R4, HIGH); digitalWrite(G4, LOW); delay(10000); //2 min delay
+
+}
+
+
+else if (IR3 == 1)//SOUTH
+{ m='C';
+
+Serial.println("MEDIUM DENSITY"); digitalWrite(R1, HIGH); digitalWrite(G1, LOW); digitalWrite(R2, HIGH);
+ 
+
+digitalWrite(G2, LOW); digitalWrite(R3, LOW); digitalWrite(G3, HIGH); digitalWrite(R4, HIGH); digitalWrite(G4, LOW); delay(10000); //2 min delay
+
+}
+
+
+else if (IR4 == 1)//NORTH
+{
+m='D';
+Serial.println("HIGH DENSITY"); digitalWrite(R1, HIGH); digitalWrite(G1, LOW); digitalWrite(R2, HIGH); digitalWrite(G2, LOW); digitalWrite(R3, HIGH); digitalWrite(G3, LOW); digitalWrite(R4, LOW); digitalWrite(G4, HIGH); delay(10000); //2 min delay
+}
+else
+{
+m='N';
+Serial.println("ALL SIDES NORMAL");
+}
+
+
+rs = r +m+J+n; send2server (rs); delay(2000);
+ 
+
+}
+void send2server (String Link)
+{
+Serial.print("rs = "); Serial.println(rs);
+if (WiFi.status() == WL_CONNECTED) { //Check WiFi connection status
+
+
+HTTPClient http; //Declare an object of class HTTPClient http.begin(Link);
+
+int httpCode = http.GET(); //Send the request if (httpCode > 0) { //Check the returning code
+String payload = http.getString(); //Get the request response payload Serial.println(payload); //Print the response payload
+}
+http.end(); //Close connection
+
+
+delay(500);
+}
+}
+
+
+void loop()
+{ if(IR5==1)
+{
+Serial.println("Vechicle Obstracle detected"); if(LDR>2500)
+{
+n='Y';
+Serial.println("NIGHT MODE LIGHTS ON"); digitalWrite(L1,HIGH); digitalWrite(L2,HIGH);
+}
+ 
+
+}
+else
+{
+n='N';
+Serial.println("NO Obstracle Detected"); digitalWrite(L1,LOW); digitalWrite(L2,LOW);
+}
+
+
+
+//1ST	
+digitalWrite(R1,	HIGH);
+digitalWrite(G1,	LOW);
+digitalWrite(R2,	HIGH);
+digitalWrite(G2,	LOW);
+digitalWrite(R3,	HIGH);
+digitalWrite(G3,	LOW);
+digitalWrite(R4,	LOW);
+digitalWrite(G4,	HIGH);
+delay(100); //2 min delay
+
+
+check(); delay(100);
+
+//2ND SIDE
+
+
+digitalWrite(R1, HIGH); digitalWrite(G1, LOW); digitalWrite(R2, HIGH); digitalWrite(G2, LOW); digitalWrite(R3, LOW); digitalWrite(G3, HIGH); digitalWrite(R4, HIGH);
+ 
+
+digitalWrite(G4, LOW); delay(100); //2 min delay check();
+delay(100);
+//3RD SIDE
+digitalWrite(R1, HIGH); digitalWrite(G1, LOW); digitalWrite(R2, LOW); digitalWrite(G2, HIGH); digitalWrite(R3, HIGH); digitalWrite(G3, LOW); digitalWrite(R4, HIGH); digitalWrite(G4, LOW); delay(100);
+check(); delay(100);
+//4th SIDE digitalWrite(R1, LOW); digitalWrite(G1, HIGH); digitalWrite(R2, HIGH); digitalWrite(G2, LOW); digitalWrite(R3, HIGH); digitalWrite(G3, LOW); digitalWrite(R4, HIGH); digitalWrite(G4, LOW); delay(100); //2 min delay check();
+delay(100);
+//SubmitHttpRequest();
+}
+ 
+
+Connecting via WiFi
+
+
+OK once you've got the LED blinking, let’s go straight to the fun part, connecting to a webserver. Create a new sketch with this code:
+
+
+Don’t forget to update:
+const char* ssid = "yourssid";
+const char* password = "yourpassword";
+to your WiFi access point and password, then upload the same way: get into bootload mode, then upload code via IDE.
+
+
+const char* host = "www.handsontec.com";
+
+
+void setup() { Serial.begin(115200); delay(100);
+// We start by connecting to a WiFi network Serial.println(); Serial.println(); Serial.print("Connecting to "); Serial.println(ssid);
+
+WiFi.begin(ssid, password);
+
+
+while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print(".");
+}
+
+
+Serial.println(""); Serial.println("WiFi connected"); Serial.println("IP address: "); Serial.println(WiFi.localIP());
+}
+
+
+int value = 0;
+
+
+void loop() { delay(5000);
+++value;
+ 
+
+Serial.print("connecting to "); Serial.println(host);
+
+
+// Use WiFiClient class to create TCP connections WiFiClient client; const int httpPort = 80;
+if (!client.connect(host, httpPort)) { Serial.println("connection failed"); return;
+}
+
+
+// We now create a URI for the request String url = "/projects/index.html"; Serial.print("Requesting URL: "); Serial.println(url);
+
+
+// This will send the request to the server client.print(String("GET ") + url + " HTTP/1.1\r\n" +
+"Host: " + host + "\r\n" + "Connection: close\r\n\r\n"); delay(500);
+
+// Read all the lines of the reply from server and print them to Serial while(client.available()){
+String line = client.readStringUntil('\r'); Serial.print(line);
+}
+
+
+Serial.println(); Serial.println("closing connection");
+}
+ 
+
